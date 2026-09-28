@@ -20,10 +20,33 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "HomeAndConstructionBusiness", "name": "Ene Mebel", "url": "https://kris20032.github.io/ene-mebel/", "telephone": "+48603885252", "image": "https://kris20032.github.io/ene-mebel/img/og.jpg", "areaServed": "Reda", "sameAs": ["https://www.facebook.com/enemebel/", "https://www.google.com/maps?cid=17151202691045481260"]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Lora (nazwa firmy na ekranie ładowania) pobierana od razu, a nie dopiero po arkuszu:
+     na wolnym łączu bez tego wejście czekało na font i odpuszczało się przy pustej kurtynie. -->
+<link rel="preload" as="font" type="font/woff2" href="https://fonts.gstatic.com/s/lora/v37/0QIvMX1D_JOuMwr7I_FMl_E.woff2" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=919bf68e">
+<link rel="stylesheet" href="assets/styles.css?v=31c9390e">
+<script>
+/* EKRAN ŁADOWANIA z nazwą firmy - tu TYLKO zapalamy klasę, przebieg stoi tuż za hero.
+   Skrypt w <head> bez defer: inaczej przez ułamek sekundy widać stronę, a dopiero potem kurtynę.
+   Kurtyna jest w CSS wyłączona i włącza ją dopiero ta klasa - bez JS nikt nie utknie.
+   Gra RAZ na wizytę; ?intro na końcu adresu odtwarza ją ponownie (do pokazywania). */
+(function(){
+  try{
+    if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+    var znowu = /[?&]intro\b/.test(location.search);
+    if (!znowu && sessionStorage.getItem('ene-intro')) return;
+    sessionStorage.setItem('ene-intro','1');
+    var h = document.documentElement;
+    h.classList.add('intro-on','intro-tlo');
+    /* twardy bezpiecznik na wypadek, gdyby przebieg za hero w ogóle nie ruszył: po 3,5 s kurtyny nie ma.
+       Gdy animacja wystartuje, przebieg zdejmuje ten zegar i liczy własny OD STARTU animacji. */
+    window.__eneIntroT = setTimeout(function(){ h.classList.remove('intro-on','intro-gra','intro-lot','intro-out','intro-bez-celu'); }, 3500);
+  }catch(e){}
+})();
+</script>
 </head>
 <body>
+<div id="intro" aria-hidden="true"><div class="intro-srodek"><div class="intro-znak"><span class="intro-nazwa">Ene Mebel</span><span class="intro-miarka"></span></div></div></div>
 
 <header class="nav">
   <div class="wrap nav-inner">
@@ -56,6 +79,72 @@
     </div>
   </div>
 </section>
+<script>
+/* EKRAN ŁADOWANIA - przebieg. Stoi tuż za hero, a nie w main.js: main.js z końca strony
+   rusza kilkaset ms później, a przy budżecie ~1,5 s to różnica między płynnie a ospale.
+   Takty: nazwa wyłania się spod maski (0,55 s) -> miarka rysuje się pod nią -> nazwa zjeżdża
+   na swoje miejsce w hero -> kurtyna odjeżdża w górę, gdy zdjęcie hero jest gotowe. */
+(function(){
+  var h = document.documentElement;
+  if (!h.classList.contains('intro-on')) return;
+  var zaslona = document.getElementById('intro');
+  var nazwa = zaslona && zaslona.querySelector('.intro-nazwa');
+  var cel = document.querySelector('.hero-cine .brandmark .bm-line > span');
+  var hero = document.querySelector('.hero-cine > img');
+  var ruszylo = false, koniec = false, T = [];
+  function za(ms, fn){ T.push(setTimeout(fn, ms)); }
+  function sprzataj(){
+    if (koniec) return; koniec = true;
+    T.forEach(clearTimeout);
+    h.classList.remove('intro-on','intro-gra','intro-lot','intro-out','intro-bez-celu');
+  }
+  if (!zaslona || !nazwa) { sprzataj(); return; }
+  /* klik, klawisz, kółko, dotyk = koniec wejścia od razu */
+  document.addEventListener('click', sprzataj, {once:true});
+  document.addEventListener('keydown', sprzataj, {once:true});
+  window.addEventListener('wheel', sprzataj, {passive:true, once:true});
+  window.addEventListener('touchstart', sprzataj, {passive:true, once:true});
+  function lot(){
+    try{
+      var a = nazwa.getBoundingClientRect(), b = cel && cel.getBoundingClientRect();
+      var fa = parseFloat(getComputedStyle(nazwa).fontSize), fb = cel ? parseFloat(getComputedStyle(cel).fontSize) : 0;
+      /* nazwy w hero nie widać (przewinięta strona, inny układ) -> napis gaśnie zamiast lecieć w próżnię */
+      if (!b || !b.width || !fa || !fb || b.bottom < 0 || b.top > innerHeight) { h.classList.add('intro-bez-celu'); return; }
+      zaslona.style.setProperty('--i-dx', (b.left + b.width/2 - (a.left + a.width/2)).toFixed(1) + 'px');
+      zaslona.style.setProperty('--i-dy', (b.top + b.height/2 - (a.top + a.height/2)).toFixed(1) + 'px');
+      zaslona.style.setProperty('--i-s', (fb/fa).toFixed(4));   /* zawsze < 1: pomniejszanie nie rozmywa */
+      h.classList.add('intro-lot');
+    }catch(e){ h.classList.add('intro-bez-celu'); }
+  }
+  function heroGotowe(){ return !hero || (hero.complete && hero.naturalWidth > 0); }
+  function graj(){
+    if (ruszylo || koniec) return; ruszylo = true;
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      if (koniec) return;
+      clearTimeout(window.__eneIntroT);
+      setTimeout(sprzataj, 3000);   /* twardy bezpiecznik liczony od startu animacji (~2x czas wejścia) */
+      h.classList.add('intro-gra');
+      za(700, lot);
+      /* kurtyna rusza najwcześniej po 0,88 s (nazwa musi zdążyć usiąść), a na zdjęcie hero
+         czeka najdłużej do 1,25 s - lepiej pokazać dociągające się zdjęcie niż trzymać zasłonę */
+      var t0 = Date.now();
+      (function czekaj(){
+        var dt = Date.now() - t0;
+        if (dt >= 880 && (heroGotowe() || dt >= 1250)) { h.classList.add('intro-out'); za(1400, sprzataj); }
+        else za(60, czekaj);
+      })();
+    }); });
+  }
+  /* Start dopiero z gotowym krojem pisma - inaczej nazwa weszłaby fontem zastępczym
+     i podmieniła się w locie. Nie ma go po 1,4 s -> odpuszczamy wejście i pokazujemy stronę. */
+  try{
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('600 64px Lora', 'Ene Mebel').then(function(l){ (l && l.length) ? graj() : sprzataj(); }, sprzataj);
+      za(1400, function(){ if (!ruszylo) sprzataj(); });
+    } else { graj(); }
+  }catch(e){ sprzataj(); }
+})();
+</script>
 <section class="strip n-5" style="padding-block:0">
   <div class="wrap">
     <div class="item reveal"><div class="k">4,8 na Google</div><div class="v"></div></div>
@@ -191,6 +280,6 @@
 <div class="sticky-reserve"><a class="sr-book" href="kontakt.html">Zapytaj o wycenę</a><a class="sr-call" href="tel:+48603885252" aria-label="Zadzwoń"><svg class="ico-tel" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.58 3.6a1 1 0 0 1-.25 1l-2.23 2.2Z" fill="currentColor"/></svg></a></div>
 <div class="demo-wazne" data-do="2026-10-04" data-cykl="3" hidden><svg class="dw-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.6" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.2V12l3.3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="dw-txt"></span></div>
 
-<script src="assets/main.js"></script>
+<script src="assets/main.js?v=23c2a1c6"></script>
 </body>
 </html>

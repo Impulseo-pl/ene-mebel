@@ -725,7 +725,9 @@
      po chwili siada do swojego rozmiaru i robi miejsce nagłówkowi sprzedażowemu. */
   safe('brand', function () {
     var bm = document.querySelector('.hero-cine .brandmark');
-    if (!bm || reduce) return;
+    // Gra ekran ładowania (index.html, 28.09.2026) - nazwa z kurtyny ląduje DOKŁADNIE na tej
+    // nazwie, więc ona ma stać w miejscu, a nie wchodzić drugi raz swoją animacją.
+    if (!bm || reduce || document.documentElement.classList.contains('intro-on')) return;
     document.documentElement.classList.add('bm-on');
     requestAnimationFrame(function () {
       requestAnimationFrame(function () { bm.classList.add('bm-in'); });

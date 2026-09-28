@@ -1674,3 +1674,87 @@ footer{view-transition-name:mt-foot}
 .btn-accent{color:#fff}
 .nav .nav-links a.btn-accent{color:#fff}
 .btn-accent[data-accent-d],.cta-d .btn-accent{color:#fff}
+
+
+/* ============================================================
+   HERO NA ŚRODKU + EKRAN ŁADOWANIA Z NAZWĄ FIRMY (Szymon, 28.09.2026)
+   Doklejone na SAM KONIEC arkusza, żeby wygrać kaskadę z hero-fit i warstwą premium.
+   ============================================================ */
+
+/* ---------- 1) Treść hero na środku - poziomo i pionowo, na każdym ekranie ---------- */
+.hero-cine{align-items:center;text-align:center}
+.hero-cine .hero-copy{max-width:880px;margin-inline:auto;display:flex;flex-direction:column;align-items:center}
+.hero-cine .lead{margin-inline:auto}
+.hero-cine .hero-actions{justify-content:center;margin-top:min(var(--space-5),2.6svh)}
+.hero-cine h1,.hero-cine .lead{text-shadow:0 1px 26px rgba(0,0,0,.3)}
+/* Nazwa ma rozstrzelone litery, a odstęp dokłada się też ZA ostatnią literą - bez
+   wyrównania z lewej napis stałby o pół odstępu na lewo od środka. */
+.hero-cine .brandmark .bm-line>span{display:inline-block;padding-left:.14em}
+.bm-on .hero-cine .brandmark{transform-origin:center}
+/* Przyciemnienie pod tekst na środku: dotąd ciemna była lewa strona (tekst stał z lewej),
+   teraz najciemniej jest za napisem, a brzegi kadru zostają jasne - zdjęcie nadal widać. */
+.hero-cine::after{background:
+  radial-gradient(ellipse 62% 58% at 50% 50%,rgba(13,18,23,.66) 0%,rgba(13,18,23,.54) 55%,rgba(13,18,23,.36) 100%),
+  linear-gradient(180deg,rgba(13,18,23,.3) 0%,rgba(13,18,23,.06) 30%,rgba(13,18,23,.06) 66%,rgba(13,18,23,.42) 100%)}
+@media(max-width:680px){
+  .hero-cine{align-items:center}
+  .hero-cine::after{background:linear-gradient(180deg,rgba(13,18,23,.52) 0%,rgba(13,18,23,.62) 45%,rgba(13,18,23,.72) 100%)}
+  .hero-cine .wrap{padding-block:var(--space-8)}
+  .hero-cine .hero-actions{width:100%;flex-direction:column;align-items:center}
+  .hero-cine .hero-actions .btn{width:min(100%,320px);justify-content:center}
+}
+
+/* ---------- 2) EKRAN ŁADOWANIA: nazwa firmy + miarka milimetrowa ----------
+   Jasna kurtyna w kolorze papieru, na niej „Ene Mebel” i miarka (hasło strony to „co do
+   milimetra”). Nazwa zjeżdża DOKŁADNIE na miejsce nazwy w hero, potem kurtyna odjeżdża
+   w górę - na linii jej krawędzi ciemny napis przechodzi w biały, bo pod kurtyną stoi
+   już prawdziwa nazwa z hero. Jeden przedmiot przechodzi z papieru na zdjęcie.
+   Reguły ze skilla wejscie-na-strone: maska + rozmycie zamiast zwykłego fade, takty,
+   zero drop-shadow (iOS), kurtyna domyślnie WYŁĄCZONA - włącza ją skrypt w <head>,
+   gra RAZ na wizytę, ?intro w adresie odtwarza ją ponownie. */
+#intro{display:none}
+.intro-on #intro{display:block;position:fixed;inset:0;z-index:200;background:var(--paper);
+  clip-path:inset(0 0 0 0)}
+.intro-on.intro-out #intro{clip-path:inset(0 0 100% 0);pointer-events:none;
+  transition:clip-path .66s cubic-bezier(.66,0,.24,1)}
+#intro .intro-srodek{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+#intro .intro-znak{display:inline-flex;flex-direction:column;align-items:stretch}
+#intro .intro-nazwa{display:block;font-family:var(--font-display);font-weight:600;
+  font-size:clamp(2.6rem,10.5vw,6.4rem);line-height:.95;letter-spacing:.14em;padding-left:.14em;
+  color:var(--ink);white-space:nowrap;text-align:center;transform-origin:50% 50%;
+  clip-path:inset(-30% 100% -30% -20%);filter:blur(14px);transform:scale(1.045)}
+.intro-gra #intro .intro-nazwa{clip-path:inset(-30% -20% -30% -20%);filter:blur(0);transform:scale(1);
+  transition:clip-path .55s cubic-bezier(.16,1,.3,1),filter .55s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+.intro-lot #intro .intro-nazwa{transform:translate(var(--i-dx,0px),var(--i-dy,0px)) scale(var(--i-s,1));
+  transition:transform .5s cubic-bezier(.16,.84,.44,1)}
+.intro-bez-celu #intro .intro-nazwa{opacity:0;transition:opacity .3s ease}
+#intro .intro-miarka{display:block;height:12px;margin-top:clamp(12px,1.5vw,20px);
+  background:
+    linear-gradient(var(--accent),var(--accent)) 0 100%/100% 1px no-repeat,
+    linear-gradient(var(--accent),var(--accent)) 100% 100%/1px 12px no-repeat,
+    repeating-linear-gradient(90deg,var(--accent) 0 1px,transparent 1px 60px) 0 100%/100% 12px no-repeat,
+    repeating-linear-gradient(90deg,var(--accent) 0 1px,transparent 1px 30px) 0 100%/100% 8px no-repeat,
+    repeating-linear-gradient(90deg,color-mix(in srgb,var(--accent) 55%,transparent) 0 1px,transparent 1px 6px) 0 100%/100% 5px no-repeat;
+  clip-path:inset(0 100% 0 0)}
+.intro-gra #intro .intro-miarka{clip-path:inset(0 0 0 0);transition:clip-path .46s cubic-bezier(.16,1,.3,1) .14s}
+.intro-lot #intro .intro-miarka{opacity:0;transition:opacity .22s ease}
+/* Reszta treści hero czeka pod kurtyną i wchodzi kaskadą, gdy kurtyna rusza.
+   Nazwa w hero stoi od początku - to w nią „wpada” napis z kurtyny.
+   !important tylko w stanie ukrytym: plakietka Google ma w HTML własne opacity:.92 (inline),
+   które inaczej wygrywa i plakietka wisi na zdjęciu przed resztą. Po starcie kurtyny wraca
+   jej naturalna wartość i przejście jedzie od zera do niej. */
+.intro-on:not(.intro-out) .hero-cine .hero-copy>*:not(.brandmark){opacity:0 !important;transform:translateY(16px)}
+.intro-on.intro-out .hero-cine .hero-copy>*:not(.brandmark){transform:none;
+  transition:opacity .7s ease,transform .8s cubic-bezier(.16,.84,.44,1)}
+.intro-on.intro-out .hero-cine .hero-copy>:nth-child(2){transition-delay:.2s}
+.intro-on.intro-out .hero-cine .hero-copy>:nth-child(3){transition-delay:.3s}
+.intro-on.intro-out .hero-cine .hero-copy>:nth-child(4){transition-delay:.4s}
+.intro-on.intro-out .hero-cine .hero-copy>:nth-child(5){transition-delay:.5s}
+/* Klasa TRWAŁA (nie schodzi razem z intro-on): wygaszone pojawianie się zdjęcia hero,
+   które inaczej grałoby pod kurtyną i kończyło się już na widoku (reguła 5b). */
+.intro-tlo .hero-cine>img{animation:none}
+@media (prefers-reduced-motion:reduce){
+  .intro-on #intro{display:none}
+  .intro-on .hero-cine .hero-copy>*{opacity:1 !important;transform:none !important}
+}
+@media print{#intro{display:none !important}}
